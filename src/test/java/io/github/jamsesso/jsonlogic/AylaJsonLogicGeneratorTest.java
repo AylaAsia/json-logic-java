@@ -13,6 +13,7 @@ import io.github.jamsesso.jsonlogic.ast.JsonLogicPrimitive;
 import io.github.jamsesso.jsonlogic.ast.JsonLogicString;
 import io.github.jamsesso.jsonlogic.ast.JsonLogicVariable;
 import io.github.jamsesso.jsonlogic.evaluator.expressions.AylaNumericComparisonExpression;
+import io.github.jamsesso.jsonlogic.evaluator.expressions.IfExpression;
 import io.github.jamsesso.jsonlogic.evaluator.expressions.LogicExpression;
 import io.github.jamsesso.jsonlogic.generator.AylaJsonLogicGenerator;
 
@@ -135,6 +136,65 @@ public class AylaJsonLogicGeneratorTest {
         String json = new AylaJsonLogicGenerator(LogicExpression.AND, new JsonLogicArray(logicNodes)).generate();
 
         String expects = "{\"and\":[{\"gt\":[{\"get_prop\":[{\"prop\":\"temperature\",\"dsn\":\"VR000111111\",\"gw\":\"GW000111111\"}]},{\"get_prop\":[{\"prop\":\"temperature\",\"dsn\":\"VR000222222\",\"gw\":\"GW000222222\"}]}]},{\"eq\":[{\"get_prop\":[{\"prop\":\"temperature\",\"dsn\":\"VR000222222\",\"gw\":\"GW000222222\"}]},{\"val\":25.0}]}]}";
+        assertEquals("mismatched output", expects, json);
+    }
+
+    @Test
+    public void testGenerateIfExpression() {
+// {
+//   "if": [
+//     {
+//       "eq": [
+//         {
+//           "get_prop": [
+//             {
+//               "prop": "my_prop",
+//               "dsn": "VR000666666",
+//               "gw": "GW000666666"
+//             }
+//           ]
+//         },
+//         {
+//           "val": 25.0
+//         }
+//       ]
+//     },
+//     {
+//       "set_prop": [
+//         {
+//           "prop": "power",
+//           "dsn": "VR000333333",
+//           "gw": "GW000333333",
+//           "val": "ON"
+//         }
+//       ]
+//     }
+//   ]
+// }
+        List<JsonLogicNode> logicNodes = new ArrayList<>();
+        logicNodes.add(new JsonLogicVariable(new JsonLogicString("prop"), new JsonLogicString("my_prop")));
+        logicNodes.add(new JsonLogicVariable(new JsonLogicString("dsn"), new JsonLogicString("GW000666666")));
+        logicNodes.add(new JsonLogicVariable(new JsonLogicString("gw"), new JsonLogicString("GW000666666")));
+        JsonLogicOperation getProp = new JsonLogicOperation("get_prop", new JsonLogicArray(logicNodes));
+
+        logicNodes = new ArrayList<>();
+        logicNodes.add(getProp);
+        logicNodes.add(new JsonLogicNumber(25));
+        JsonLogicOperation condEq = new JsonLogicOperation("eq", new JsonLogicArray(logicNodes));
+
+        logicNodes = new ArrayList<>();
+        logicNodes.add(new JsonLogicVariable(new JsonLogicString("prop"), new JsonLogicString("power")));
+        logicNodes.add(new JsonLogicVariable(new JsonLogicString("dsn"), new JsonLogicString("VR000333333")));
+        logicNodes.add(new JsonLogicVariable(new JsonLogicString("gw"), new JsonLogicString("GW000333333")));
+
+        logicNodes.add(new JsonLogicVariable(new JsonLogicString("val"), new JsonLogicString("ON")));
+        JsonLogicOperation thenSetProp = new JsonLogicOperation("set_prop", new JsonLogicArray(logicNodes));
+
+        logicNodes = new ArrayList<>();
+        logicNodes.add(condEq);
+        logicNodes.add(thenSetProp);
+        String json = new AylaJsonLogicGenerator(IfExpression.IF, new JsonLogicArray(logicNodes)).generate();
+        String expects = "{\"if\":[{\"eq\":[{\"get_prop\":[{\"prop\":\"my_prop\",\"dsn\":\"GW000666666\",\"gw\":\"GW000666666\"}]},{\"val\":25.0}]},{\"set_prop\":[{\"prop\":\"power\",\"dsn\":\"VR000333333\",\"gw\":\"GW000333333\",\"val\":\"ON\"}]}]}";
         assertEquals("mismatched output", expects, json);
     }
 }
